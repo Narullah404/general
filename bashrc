@@ -116,9 +116,6 @@ if ! shopt -oq posix; then
   fi
 fi
 
-source <(curl -s https://raw.githubusercontent.com/starcry/general/master/bashrc)
-source $HOME/git/utility-scripts/bashrc
-
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
 function gcl() {
