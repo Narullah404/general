@@ -1,195 +1,157 @@
-export VISUAL=vim
-export EDITOR="$VISUAL"
+# ~/.bashrc: executed by bash(1) for non-login shells.
+# see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
+# for examples
 
-#alias ms="minikube start --extra-config=controller-manager.HorizontalPodAutoscalerUseRESTClients=true; minikube addons enable ingress"
-alias ms="minikube start; minikube addons enable ingress"
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
 
-alias gl="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
-alias gdm="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit master.."
-alias gs="git status"
-alias gat="git ls-files --modified | xargs git add"
-alias gaa="git add -u"
-alias gb="git branch | grep \"*\" | cut -d ' ' -f2"
-function gco() {
-  BRANCH=$(gb)
-  FUNCTION=$1
-  COMMENT="${@:2}"
-  git commit -m "$FUNCTION: $BRANCH: $COMMENT"
-}
+# don't put duplicate lines or lines starting with space in the history.
+# See bash(1) for more options
+HISTCONTROL=ignoreboth
 
-alias tf="terraform"
-alias tg="terragrunt"
-alias tgp="tg plan"
-alias tfp="tf plan -out=tf.plan"
-alias tfa="tf apply tf.plan"
-alias rb=". ~/.bashrc"
-alias tgo="tmux new -s aidan"
+# append to the history file, don't overwrite it
+shopt -s histappend
 
-alias fn="find -name $1"
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=1000
+HISTFILESIZE=2000
 
-alias lsd="ls -d */ | xargs du -chs | grep -v total"
+# check the window size after each command and, if necessary,
+# update the values of LINES and COLUMNS.
+shopt -s checkwinsize
 
-alias gr="cd $(git rev-parse --show-toplevel)"
-#alias gr="echo $(git rev-parse --show-toplevel)"
+# If set, the pattern "**" used in a pathname expansion context will
+# match all files and zero or more directories and subdirectories.
+#shopt -s globstar
 
-alias ocp="xclip -i -sel c"
+# make less more friendly for non-text input files, see lesspipe(1)
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
-alias choco="echo \"scripts/windows/iis/setup.ps1:Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))\""
+# set variable identifying the chroot you work in (used in the prompt below)
+if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
+    debian_chroot=$(cat /etc/debian_chroot)
+fi
 
-alias rts="find . -not -path '*/\\.*' | xargs -I {} sed -i 's/[[:space:]]*$//' {}"
+# set a fancy prompt (non-color, unless we know we "want" color)
+case "$TERM" in
+    xterm-color|*-256color) color_prompt=yes;;
+esac
 
-alias ppc="column -t -s, $1"
+# uncomment for a colored prompt, if the terminal has the capability; turned
+# off by default to not distract the user: the focus in a terminal window
+# should be on the output of commands, not on the prompt
+#force_color_prompt=yes
 
-function lsak() {
-  for i in $(aws iam list-users --query 'Users[*].UserName' --output text)
-    do aws iam list-access-keys --user-name $i --query 'AccessKeyMetadata[*].[UserName, AccessKeyId]' --output text
-  done
-}
+if [ -n "$force_color_prompt" ]; then
+    if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
+	# We have color support; assume it's compliant with Ecma-48
+	# (ISO/IEC-6429). (Lack of such support is extremely rare, and such
+	# a case would tend to support setf rather than setaf.)
+	color_prompt=yes
+    else
+	color_prompt=
+    fi
+fi
 
-function hc() {
-  COMMAND=$(history | tail -n $1 | head -n1 | awk '{$1="";print substr($0,2)}')
-}
+if [ "$color_prompt" = yes ]; then
+    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+else
+    PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
+fi
+unset color_prompt force_color_prompt
 
-function gg() {
-  git grep -i -n $1 -- `git rev-parse --show-toplevel`
-}
+# If this is an xterm set the title to user@host:dir
+case "$TERM" in
+xterm*|rxvt*)
+    PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
+    ;;
+*)
+    ;;
+esac
 
-function insid() {
-  aws ec2 describe-instances --instance-id $1 --query 'Reservations[*].Instances[*].[InstanceId,PrivateIpAddress,PublicIpAddress,State.Name,Tags[?Key==`Name`]| [0].Value]' --output text
-}
+# enable color support of ls and also add handy aliases
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    #alias dir='dir --color=auto'
+    #alias vdir='vdir --color=auto'
 
-function instag() {
-  if [ -z $1 ]
-    then aws ec2 describe-instances  --query 'Reservations[*].Instances[*].[InstanceId,Placement.AvailabilityZone,InstanceType,Platform,LaunchTime,PrivateIpAddress,PublicIpAddress,State.Name,Tags[?Key==`Name`]| [0].Value]' --output text
-  elif [ -z $2 ]
-    then aws ec2 describe-instances  --query 'Reservations[*].Instances[*].[InstanceId,Placement.AvailabilityZone,InstanceType,Platform,LaunchTime,PrivateIpAddress,PublicIpAddress,State.Name,Tags[?Key==`Name`]| [0].Value]' --output text | grep -i $1
-  else
-    local TAG="${2:-Name}"
-    local VALUE="${1:-*}"
-    aws ec2 describe-instances --filter "Name=tag:$TAG,Values=$VALUE"  --query 'Reservations[*].Instances[*].[InstanceId,Placement.AvailabilityZone,InstanceType,Platform,LaunchTime,PrivateIpAddress,PublicIpAddress,State.Name,Tags[?Key==`Name`]| [0].Value]' --output text
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# colored GCC warnings and errors
+#export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+
+# some more ls aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+
+# Add an "alert" alias for long running commands.  Use like so:
+#   sleep 10; alert
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+
+# Alias definitions.
+# You may want to put all your additions into a separate file like
+# ~/.bash_aliases, instead of adding them here directly.
+# See /usr/share/doc/bash-doc/examples in the bash-doc package.
+
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
+
+# enable programmable completion features (you don't need to enable
+# this, if it's already enabled in /etc/bash.bashrc and /etc/profile
+# sources /etc/bash.bashrc).
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
   fi
+fi
+
+source <(curl -s https://raw.githubusercontent.com/starcry/general/master/bashrc)
+source $HOME/git/utility-scripts/bashrc
+
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+function gcl() {
+        URL="https://youlend.visualstudio.com/DefaultCollection/Youlend-Infrastructure/_git/"${1}
+        git clone $URL
 }
 
-function inssec() {
-  local INSID=$1
-  local SUMMARY=$2
-  SGIDS=$(aws ec2 describe-instances --instance-ids $INSID --query 'Reservations[*].Instances[*].NetworkInterfaces[*].Groups[*].GroupId' --output text)
-  echo "instance $INSID has security groups\n$SGIDS"
-  for i in $SGIDS; do
-    echo "rules for $i"
-    aws ec2 describe-security-group-rules --filters "Name=group-id,Values=$i" --query 'SecurityGroupRules[*].[IsEgress,FromPort,ToPort,CidrIpv4,Description]' --output text | \
-      awk '$1 == "False"' | \
-      cut -f2- | \
-      sed '1i FromPort ToPort CidrIpv4 Description' | \
-      column --table
-    # inssec i-0cbffe08369061686 | grep -v "rules for sg-\|FromPort.*ToPort.*CidrIpv4\|instance.*i-" | grep . | awk '{print $1, $2, $3}' | sort -u | column --table
-    echo
-  done | grep -v "rules for sg-\|FromPort.*ToPort.*CidrIpv4\|instance.*i-" | grep . | awk '{print $1, $2, $3}' | sort -u | column --table
-}
+#function msha() {
+#        sudo mount -t cifs //DESKTOP-2GUK0EI/Users/aidan/vm_shared/ubuntu ~/shared -o user=$(whoami),uid=$UID,gid=$(getent group $(whoami) | cut -d ':' -f3)
+##       ln -s ~/git /shared
+#}
+
+export PATH=$PATH:$HOME/.local/bin:$HOME/go/bin
+
+export ENV=dev
+export TEAM=euston
+export MONGOPW=Harmonic_1
 
 
-alias ssm="aws ssm start-session --target $i"
+# Added by serverless binary installer
+export PATH="$HOME/.serverless/bin:$PATH"
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+#kubectx and kubens
+export PATH=~/.kubectx:$PATH
+#export TF_VAR_PAGERDUTY_TOKEN="u+XWnDaCNh9yr73YWQPg"
+#export PATH="$PATH:/opt/mssql-tools/bin"
 
-function sst() {
-  IFS=$'\n'
-  echo "logging you into these instances"
-  NAME=$1
-  instag $NAME | grep running
-  INSID=$(instag $NAME | grep running | cut -f1)
-  for i in $(instag $NAME | grep running); do
-    echo "logging you into $i"
-    ssm $(echo $i | cut -f1)
-   done
-}
+export PATH="$HOME/.tfenv/bin:$PATH"
 
-function lssec() {
-  aws secretsmanager list-secrets --query 'SecretList[].[Name,ARN]' --output text | column -t
-}
-
-function getsec() {
-  for i in $(aws secretsmanager list-secrets --query 'SecretList[].[Name,ARN]' --output text | column -t | grep $1 | awk '{print $2}'); do
-    echo Secret: $(echo $i | sed 's/.*://g')
-    aws secretsmanager get-secret-value --secret-id $i --query 'SecretString' --output text | sed 's/\\//g' | jq | grep -v '{\|}' | sed 's/"//g;s/://g;s/,//g;s/  //g' | column -t -s ' '
-    echo
-  done
-}
-
-function tgf() {
-  for i in $(find -name "terragrunt*" | grep -v terragrunt-cache)
-    do TEMP=$(echo $i | sed 's/hcl/tf/g')
-    mv $i $TEMP
-    terraform fmt $TEMP
-    mv $TEMP $i
-  done
-}
-
-function tff() {
-  for i in $(find -name "*.tf" | grep -v terragrunt-cache)
-    do terraform fmt $i
-  done
-}
-
-alias tcp="tmux show-buffer | xclip -sel clip -i"
-
-function awsp() {
-  ENV="${1:-default}"
-  export AWS_PROFILE="${1:-default}"
-}
-
-function fmtbranch() {
-  for i in $(find -name "*.hcl" | sed 's/\.hcl//'); do
-    mv $i.hcl $i.tf
-    terraform fmt $i.tf
-    mv $i.tf
-    $i.hcl
-  done
-}
-
-function taws() {
-  if [ !  -z "$1" ]
-  then
-    export AWS_ACCESS_KEY_ID=$1
-    export AWS_SECRET_ACCESS_KEY=$2
-  else
-    unset AWS_ACCESS_KEY_ID
-    unset AWS_SECRET_ACCESS_KEY
-  fi
-}
-
-parse_git_branch() {
-  git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/:(\1)/'
-}
-
-function cdr() {
-  PLEVEL=$(git grep . -- `git rev-parse --show-toplevel` | sed 's/:.*//g' | head -n1 | grep -o '../' | wc -l)
-  for (( i=1; i<$PLEVEL; i++ )); do cd ../; done
- }
-
-PS1="[\$(date +%k:%M)] $(echo $PS1 | sed 's/..$//')\$(parse_git_branch)\[\033[00m\]$ "
-
-function tflog() {
-  export TF_LOG=DEBUG
-  export TF_LOG_PATH=$(pwd)/log.log
-}
-
-function reni() {
-  IP=$(dig +short $1 | tail -n1)
-  aws ec2 describe-network-interfaces --query 'NetworkInterfaces[*].[NetworkInterfaceId,PrivateIpAddresses[*].PrivateIpAddress]' --output text | grep -B1 $IP | grep eni
-}
-
-function inspw() {
-  ID=$1
-  KEYPAIR=$2
-  aws ec2 get-password-data --instance-id $ID --priv-launch-key $KEYPAIR
-}
-
-function sga () {
-  aws ec2 describe-network-interfaces --filter Name=group-id,Values="${1:-*}" --query 'NetworkInterfaces[*].Attachment'
-}
-
-
-#neovim magics
-# now you can copy to clipboard with '+y'
-#set clipboard+=unnamedplus
-source <(kubectl completion bash)
-complete -C aws_completer aws
+function tgv(){                                                                 
+  REPO=$1                                                                       
+  tg run-all validate --terragrunt-working-dir ~/git/$1/envs                    
+}                                                                               
+                                                                     
+alias cls='clear'                                                               
+alias precommit='pre-commit run --all-files' 
